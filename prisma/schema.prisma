@@ -1,0 +1,39 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                String    @id
+  email             String    @unique
+  credits           Int       @default(50)
+  stripeCustomerId  String?   @map("stripe_customer_id")
+  subscriptionId    String?   @map("subscription_id")
+  subscriptionStatus String?  @map("subscription_status") @default("inactive")
+  planType          String    @default("free") @map("plan_type") // "free", "basic", "pro", "enterprise"
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+  history           History[]
+
+  @@map("profiles") // Map to existing Supabase profiles table
+}
+
+model History {
+  id          String   @id @default(cuid())
+  userId      String   @map("user_id")
+  user        User     @relation(fields: [userId], references: [id])
+  toolType    String   @map("tool_type") // "image", "video", "content", "code", "audio"
+  action      String   // "generate", "enhance", "convert", etc.
+  prompt      String?
+  result      String?  // URL or content
+  credits     Int
+  status      String   // "completed", "failed", "processing"
+  createdAt   DateTime @default(now()) @map("created_at")
+  metadata    Json?    // Additional tool-specific data
+
+  @@map("history")
+}
